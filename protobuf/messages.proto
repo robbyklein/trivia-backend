@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package triviaMessage;
+
+option go_package = "github.com/robbyklein/trivia-backend/protobuf";
+
+/*
+    Messages
+*/
+
+enum MessageType {
+    MESSAGE_UNKNOWN = 0;
+    MESSAGE_REGISTER = 1;
+    MESSAGE_SIGN_IN = 2;
+    MESSAGE_JOIN = 3;
+    MESSAGE_ANSWER = 4;
+}
+
+message RegisterMessage {
+    string username = 1;
+    string email = 2;
+    string password = 3;
+}
+
+message SignInMessage {
+    string email = 1;
+    string password = 2;
+}
+
+message JoinMessage {
+    string email = 1;
+}
+
+message AnswerMessage {
+    string answer = 1;
+}
+
+message TriviaMessage {
+    MessageType type = 1; 
+    RegisterMessage register = 2;
+    SignInMessage signIn = 3;
+    JoinMessage join = 4;
+    AnswerMessage answer = 5;
+}
+
+/*
+   Responses
+*/
+
+enum ResponseStatus {
+    RESPONSE_UNKNOWN = 0;
+    RESPONSE_SUCCESS = 1;
+    RESPONSE_ERROR = 2;
+}
+
+message RegistrationResponse {
+    ResponseStatus type = 1; 
+    string text = 2;
+}
+

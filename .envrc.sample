@@ -1,0 +1,5 @@
+# The following variables need to be set however you perfer
+# This is a sample file using direnv
+export DATABASE_URL="postgresql://robby@127.0.0.1:5432/trivia-backend"
+export GO_ENV=development
+export SHARED_SECRET=ABCD1234
