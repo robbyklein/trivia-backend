@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
@@ -9,6 +10,14 @@ import (
 	"github.com/robbyklein/trivia-backend/protobuf"
 	"google.golang.org/protobuf/proto"
 )
+
+var connection *net.UDPConn
+var buffer = make([]byte, 1024)
+
+func init() {
+	go startServerListener()
+	connection, _ = helpers.CreateUDPConnection()
+}
 
 func startServerListener() {
 	buffer := make([]byte, 1024)
@@ -25,16 +34,6 @@ func startServerListener() {
 }
 
 func TestRegistration(t *testing.T) {
-	// Start server message listener
-	go startServerListener()
-
-	// Create a connection to send messages
-	connection, err := helpers.CreateUDPConnection()
-
-	if err != nil {
-		t.Fatalf("Failed to connect to UDP server")
-	}
-
 	// Create a register message
 	registerMessage := &protobuf.TriviaMessage{
 		Type: protobuf.MessageType_MESSAGE_REGISTER,
@@ -62,9 +61,6 @@ func TestRegistration(t *testing.T) {
 	// Add delay to allow server to process the message.
 	time.Sleep(1 * time.Second)
 
-	// Create buffer for response
-	buffer := make([]byte, 1024)
-
 	// Read it
 	n, _, err := connection.ReadFromUDP(buffer)
 
@@ -72,21 +68,16 @@ func TestRegistration(t *testing.T) {
 		t.Fatalf("Failed to read response from UDP server: %v", err)
 	}
 
-	fmt.Println(string(buffer[:n]))
+	// Deserialize it
+	var msg protobuf.Response
+	err = proto.Unmarshal(buffer[:n], &msg)
 
+	if msg.Status != protobuf.ResponseStatus_RESPONSE_SUCCESS {
+		t.Fatalf("Recieved a non success status: %v", err)
+	}
 }
 
-func TestLogin(t *testing.T) {
-	// Start server message listener
-	go startServerListener()
-
-	// Create a connection to send messages
-	connection, err := helpers.CreateUDPConnection()
-
-	if err != nil {
-		t.Fatalf("Failed to connect to UDP server")
-	}
-
+func TestSignin(t *testing.T) {
 	// Create a register message
 	signInMessage := &protobuf.TriviaMessage{
 		Type: protobuf.MessageType_MESSAGE_SIGN_IN,
@@ -112,4 +103,19 @@ func TestLogin(t *testing.T) {
 
 	// Add delay to allow server to process the message.
 	time.Sleep(1 * time.Second)
+
+	// Read it
+	n, _, err := connection.ReadFromUDP(buffer)
+
+	if err != nil {
+		t.Fatalf("Failed to read response from UDP server: %v", err)
+	}
+
+	// Deserialize it
+	var msg protobuf.Response
+	err = proto.Unmarshal(buffer[:n], &msg)
+
+	if msg.Status != protobuf.ResponseStatus_RESPONSE_SUCCESS {
+		t.Fatalf("Recieved a non success status: %v", err)
+	}
 }

@@ -53,8 +53,8 @@ enum ResponseStatus {
     RESPONSE_ERROR = 2;
 }
 
-message RegistrationResponse {
-    ResponseStatus type = 1; 
+message Response {
+    ResponseStatus status = 1; 
     string text = 2;
 }
 
