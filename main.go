@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/robbyklein/trivia-backend/controllers"
+	"github.com/robbyklein/trivia-backend/helpers"
 	"github.com/robbyklein/trivia-backend/initializers"
 	"github.com/robbyklein/trivia-backend/models"
 	"github.com/robbyklein/trivia-backend/protobuf"
@@ -34,15 +35,21 @@ func init() {
 	// Create tables
 	initializers.SyncDatabase(db)
 
+	// Populate questions
+	helpers.PopulateQuestions(db)
+
 	// Create udp server
 	udp, err = initializers.CreateUDPServer()
 
 	if err != nil {
 		panic("Failed to create udp server")
 	}
+
+	// Start server
+	go startUDPServer()
 }
 
-func main() {
+func startUDPServer() {
 	buffer := make([]byte, 1024)
 
 	for {
@@ -57,6 +64,9 @@ func main() {
 	}
 }
 
+func main() {
+}
+
 func handleMessage(data []byte, clientAddress *net.UDPAddr) {
 	// Parse message
 	var msg protobuf.TriviaMessage
@@ -69,13 +79,13 @@ func handleMessage(data []byte, clientAddress *net.UDPAddr) {
 	// Handle it
 	switch msg.Type {
 	case protobuf.MessageType_MESSAGE_REGISTER:
-		controllers.RegistrationsCreate(db, udp, clientAddress, msg.Register)
+		controllers.RegistrationCreate(db, udp, clientAddress, msg.Register)
 	case protobuf.MessageType_MESSAGE_SIGN_IN:
 		controllers.SignInCreate(db, udp, clientAddress, msg.SignIn)
 	case protobuf.MessageType_MESSAGE_JOIN:
 		fmt.Println("We hit a join message")
 	case protobuf.MessageType_MESSAGE_ANSWER:
-		fmt.Println("We hit a answer message")
+		controllers.AnswerSubmit(db, udp, clientAddress, msg.Answer)
 	default:
 		fmt.Println("Unknown message type")
 	}

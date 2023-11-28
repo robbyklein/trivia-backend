@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegistrationsCreate(db *gorm.DB, udp *net.UDPConn, clientAddress *net.UDPAddr, msg *protobuf.RegisterMessage) {
+func RegistrationCreate(db *gorm.DB, udp *net.UDPConn, clientAddress *net.UDPAddr, msg *protobuf.RegisterMessage) {
 	// Validate password
 	if !helpers.IsPasswordValid(msg.Password) {
 		helpers.RespondWithError(udp, clientAddress, "Password must be 8+ characters")

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net"
 	"testing"
 	"time"
 
@@ -11,29 +9,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var connection *net.UDPConn
 var buffer = make([]byte, 1024)
-
-func init() {
-	go startServerListener()
-	connection, _ = helpers.CreateUDPConnection()
-}
-
-func startServerListener() {
-	buffer := make([]byte, 1024)
-
-	for {
-		n, clientAddr, err := udp.ReadFromUDP(buffer)
-
-		if err != nil {
-			fmt.Println("Failed to read message")
-		}
-
-		handleMessage(buffer[:n], clientAddr)
-	}
-}
+var token string
 
 func TestRegistration(t *testing.T) {
+
 	// Create a register message
 	registerMessage := &protobuf.TriviaMessage{
 		Type: protobuf.MessageType_MESSAGE_REGISTER,
@@ -52,6 +32,7 @@ func TestRegistration(t *testing.T) {
 	}
 
 	// Send it
+	connection, _ := helpers.CreateUDPConnection()
 	_, err = connection.Write(data)
 
 	if err != nil {
@@ -95,6 +76,7 @@ func TestSignin(t *testing.T) {
 	}
 
 	// Send it
+	connection, _ := helpers.CreateUDPConnection()
 	_, err = connection.Write(data)
 
 	if err != nil {
@@ -118,4 +100,52 @@ func TestSignin(t *testing.T) {
 	if msg.Status != protobuf.ResponseStatus_RESPONSE_SUCCESS {
 		t.Fatalf("Recieved a non success status: %v", err)
 	}
+
+	token = msg.Text
+}
+
+func TestAnswer(t *testing.T) {
+	// Create a register message
+	answerMessage := &protobuf.TriviaMessage{
+		Type: protobuf.MessageType_MESSAGE_ANSWER,
+		Answer: &protobuf.AnswerMessage{
+			Answer: "The beatles",
+			Token:  token,
+		},
+	}
+
+	// Serialize it
+	data, err := proto.Marshal(answerMessage)
+
+	if err != nil {
+		t.Fatalf("Failed to marshal message: %v", err)
+	}
+
+	// Send it
+	connection, _ := helpers.CreateUDPConnection()
+	_, err = connection.Write(data)
+
+	if err != nil {
+		t.Fatalf("Failed to write to UDP server: %v", err)
+	}
+
+	// Add delay to allow server to process the message.
+	time.Sleep(1 * time.Second)
+
+	// Read it
+	n, _, err := connection.ReadFromUDP(buffer)
+
+	if err != nil {
+		t.Fatalf("Failed to read response from UDP server: %v", err)
+	}
+
+	// Deserialize it
+	var msg protobuf.Response
+	err = proto.Unmarshal(buffer[:n], &msg)
+
+	if msg.Status != protobuf.ResponseStatus_RESPONSE_SUCCESS {
+		t.Fatalf("Recieved a non success status: %v", err)
+	}
+
+	token = msg.Text
 }

@@ -29,10 +29,12 @@ message SignInMessage {
 
 message JoinMessage {
     string email = 1;
+    string token = 2;
 }
 
 message AnswerMessage {
     string answer = 1;
+    string token = 2;
 }
 
 message TriviaMessage {
